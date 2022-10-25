@@ -1,4 +1,4 @@
-# kie-scripts
+# KIE-scripts
 This is a collection of scripts to use with the KIE Tools repository. 
 Create a symlink to them in your "~/bin" folder to use them.
 
