@@ -41,14 +41,17 @@ function build_package() {
 
     if [[ ! $BUILDDEPS = true ]]; then
         pnpm run build:$ENV
+        exitStatus=$?
     else
         time pnpm -r -F @kie-tools/$currentPkgName... build:$ENV
+        exitStatus=$?
         if [ $? -eq 0 ]; then
             time pnpm -r -F $currentPkgName... build:$ENV
+            exitStatus=$?
         fi
     fi
 
-    if [ $? -ne 0 ]; then
+    if [ $exitStatus -ne 0 ]; then
         notify "Build failed"
         exit 1
     fi
