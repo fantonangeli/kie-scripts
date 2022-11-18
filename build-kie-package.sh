@@ -73,6 +73,11 @@ function notify() {
     fi
 }
 
+function get_package_name() {
+    fullPkgName=$1
+    echo $fullPkgName | sed -E "s/(@kie-tools\\/)?(.*)/\2/"
+}
+
 function start_pkg_build() {
     pkgName=$1
     pkgBuildName=$(get_pkg_build_name $pkgName)
@@ -153,6 +158,8 @@ done
 
 if [[ -z "$pkgName" ]]; then
     pkgName=${PWD##*/}
+else 
+    pkgName=$(get_package_name $pkgName )
 fi 
 
 start_pkg_build $pkgName 
