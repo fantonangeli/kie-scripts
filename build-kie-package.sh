@@ -21,15 +21,12 @@ function get_pkg_path() {
     fi
 }
 
-function get_build_path() {
-    currentDirectory=${PWD##*/} 
+function get_pkg_build_name() {
     currentPkgName=$1
     packagePath=$(get_pkg_path $currentPkgName)
 
-    if [[ $BUILDDEPS = true && ! $currentDirectory = "kie-tools" ]]; then
-        echo $kieToolsPath
-    elif [[ -d $packagePath ]]; then
-        echo $packagePath
+    if [[ -d $packagePath ]]; then
+        (cd $packagePath; echo `npm pkg get name  | sed 's/"//g'`)
     else
         exit 0
     fi
@@ -40,15 +37,11 @@ function build_package() {
     echo "Building package: $currentPkgName"
 
     if [[ ! $BUILDDEPS = true ]]; then
-        pnpm run build:$ENV
+        (cd "$kieToolsPath/$packagesDir/$currentPkgName"; pnpm run build:$ENV)
         exitStatus=$?
     else
-        time pnpm -r -F @kie-tools/$currentPkgName... build:$ENV
+        (cd $kieToolsPath; time pnpm -r -F $currentPkgName... build:$ENV)
         exitStatus=$?
-        if [ $? -eq 0 ]; then
-            time pnpm -r -F $currentPkgName... build:$ENV
-            exitStatus=$?
-        fi
     fi
 
     if [ $exitStatus -ne 0 ]; then
@@ -82,12 +75,11 @@ function notify() {
 
 function start_pkg_build() {
     pkgName=$1
-    buildPath=$(get_build_path $pkgName)
+    pkgBuildName=$(get_pkg_build_name $pkgName)
 
-    cd "$buildPath"
     echo "Changed location to `pwd`"
 
-    build_package $pkgName
+    build_package $pkgBuildName
     test_package $pkgName
 }
 
