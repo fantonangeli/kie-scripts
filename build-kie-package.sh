@@ -34,53 +34,42 @@ function get_pkg_build_name() {
 }
     
 function build_package() {
-    currentPkgName=$1
-    echo "Building package: $currentPkgName"
+    pkgName=$1
+    pkgBuildName=$(get_pkg_build_name $pkgName)
+    echo "Building package: $pkgBuildName"
 
     if [[ ! $BUILDDEPS = true ]]; then
-        (cd "$kieToolsPath/$packagesDir/$currentPkgName"; pnpm run build:$ENV)
+        (cd "$kieToolsPath/$packagesDir/$pkgName"; pnpm run build:$ENV)
         exitStatus=$?
     else
-        (cd $kieToolsPath; time pnpm -r -F $currentPkgName... build:$ENV)
+        (cd $kieToolsPath; time pnpm -r -F $pkgBuildName... build:$ENV)
         exitStatus=$?
     fi
 
     if [ $exitStatus -ne 0 ]; then
+        echo "Error: Failed to build $pkgBuildName"
         notify "Build failed"
         exit 1
     fi
 }
     
-function test_package() {
+function run_package_command() {
     currentPkgName=$1
     packagePath=$(get_pkg_path $currentPkgName)
+    commandToRun=$2
 
-    if [[ $TESTPKG = true && -d $packagePath ]]; then
+    if [[ -d $packagePath ]]; then
         (
             cd $packagePath
-            pnpm run test
+            eval $commandToRun
         )
-        if [ $? -eq 0 ]; then
+        if [ $? -ne 0 ]; then
+            echo "Error: Filed to run '$commandToRun'"
             exit 1
         fi
     fi
 }
-    
-function start_package() {
-    currentPkgName=$1
-    packagePath=$(get_pkg_path $currentPkgName)
 
-    if [[ $STARTPKG = true && -d $packagePath ]]; then
-        (
-            cd $packagePath
-            pnpm start
-        )
-        if [ $? -eq 0 ]; then
-            exit 1
-        fi
-    fi
-}
-    
 function repo_bootstrap() {
     if [[ $BOOTSTRAP = true ]]; then
         (
@@ -105,16 +94,6 @@ function notify() {
 function get_package_name() {
     fullPkgName=$1
     echo $fullPkgName | sed -E "s/(@kie-tools\\/)?(.*)/\2/"
-}
-
-function start_pkg_build() {
-    pkgName=$1
-    pkgBuildName=$(get_pkg_build_name $pkgName)
-
-    echo "Changed location to `pwd`"
-
-    build_package $pkgBuildName
-    test_package $pkgName
 }
 
 function usage()
@@ -203,14 +182,18 @@ fi
 
 repo_bootstrap
 
-start_pkg_build $pkgName 
+build_package $pkgName 
 
 cd $origPwd
 
 notify "Build done"
 
+if [[ $TESTPKG = true ]]; then
+    run_package_command $pkgName "pnpm test"
+fi
+
 if [[ $STARTPKG = true ]]; then
-    pnpm start
+    run_package_command $pkgName "pnpm start"
 fi
 
 
