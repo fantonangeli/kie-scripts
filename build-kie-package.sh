@@ -1,14 +1,15 @@
 #!/bin/bash
-VERSION="0.1"
+BOOTSTRAP=false
+BUILDDEPS=false
 ENV="dev"
-origPwd=`pwd`
-packagesDir="packages"
+QUIET=false
+STARTPKG=false
+TESTPKG=false
+VERSION="0.1"
 kiePkgPrefix="@kie-tools"
 kieToolsPath=""
-BUILDDEPS=false
-QUIET=false
-STARTPRJ=false
-TESTPKG=false
+origPwd=`pwd`
+packagesDir="packages"
 pkgName=""
 kieToolsPath=$(pwd | sed -E "s@(.*\/kie-tools).*@\1@")
 
@@ -64,6 +65,34 @@ function test_package() {
         fi
     fi
 }
+    
+function start_package() {
+    currentPkgName=$1
+    packagePath=$(get_pkg_path $currentPkgName)
+
+    if [[ $STARTPKG = true && -d $packagePath ]]; then
+        (
+            cd $packagePath
+            pnpm start
+        )
+        if [ $? -eq 0 ]; then
+            exit 1
+        fi
+    fi
+}
+    
+function repo_bootstrap() {
+    if [[ $BOOTSTRAP = true ]]; then
+        (
+            cd $kieToolsPath
+            pnpm bootstrap
+        )
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to bootstrap"
+            exit 1
+        fi
+    fi
+}
 
 function notify() {
     message=$1
@@ -94,12 +123,13 @@ function usage()
     Build a Kie package everywhere in kie-tools.
 
     Options:
-    -q|--quiet           Do not show notifications
-    -p|--production     Buil in production mode
-    -s|--start             Start the package, if it's only one
+    -b|--bootstrap     Run "pnpm bootstrap" on the repository root before building
     -d|--build-deps     Build the dependencies
-    -t|--test           Test the packages
     -h|--help             Display this message
+    -p|--production     Buil in production mode
+    -q|--quiet           Do not show notifications
+    -s|--start             Start the package, if it's only one
+    -t|--test           Test the packages
     -v|--version          Display script version
 
     Examples:
@@ -112,20 +142,8 @@ function usage()
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    -q|--quiet)
-      QUIET=true
-      shift 
-      ;;
-    -p|--production)
-      ENV="prod"
-      shift 
-      ;;
-    -s|--start)
-      STARTPRJ=true
-      shift
-      ;;
-    -t|--test)
-      TESTPKG=true
+    -b|--bootstrap)
+      BOOTSTRAP=true
       shift
       ;;
     -d|--build-deps)
@@ -135,6 +153,22 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       usage
       exit 0
+      shift
+      ;;
+    -p|--production)
+      ENV="prod"
+      shift 
+      ;;
+    -q|--quiet)
+      QUIET=true
+      shift 
+      ;;
+    -s|--start)
+      STARTPKG=true
+      shift
+      ;;
+    -t|--test)
+      TESTPKG=true
       shift
       ;;
     -v|--version)
@@ -156,11 +190,18 @@ done
 
 ########################################################################
 
+if [[ ! -d $kieToolsPath ]]; then
+    echo "Repository root not found"
+    exit 1
+fi
+
 if [[ -z "$pkgName" ]]; then
     pkgName=${PWD##*/}
 else 
     pkgName=$(get_package_name $pkgName )
 fi 
+
+repo_bootstrap
 
 start_pkg_build $pkgName 
 
@@ -168,7 +209,7 @@ cd $origPwd
 
 notify "Build done"
 
-if [[ $STARTPRJ = true ]]; then
+if [[ $STARTPKG = true ]]; then
     pnpm start
 fi
 
