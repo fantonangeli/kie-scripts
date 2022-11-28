@@ -5,7 +5,8 @@ ENV="dev"
 QUIET=false
 STARTPKG=false
 TESTPKG=false
-VERSION="0.1"
+VERSION="0.9"
+WATCH=false
 kiePkgPrefix="@kie-tools"
 kieToolsPath=""
 origPwd=`pwd`
@@ -98,18 +99,19 @@ function get_package_name() {
 
 function usage()
 {
-    echo "Usage :  $0 [package 1] [options]
+    echo "Usage :  $0 [package] [options]
     Build a Kie package everywhere in kie-tools.
 
     Options:
-    -b|--bootstrap     Run "pnpm bootstrap" on the repository root before building
-    -d|--build-deps     Build the dependencies
-    -h|--help             Display this message
-    -p|--production     Buil in production mode
-    -q|--quiet           Do not show notifications
-    -s|--start             Start the package, if it's only one
-    -t|--test           Test the packages
-    -v|--version          Display script version
+    -b|--bootstrap          Run "pnpm bootstrap" on the repository root before building
+    -d|--build-deps         Build the dependencies
+    -h|--help               Display this message
+    -p|--production         Buil in production mode
+    -q|--quiet              Do not show notifications
+    -s|--start              Start the package, if it's only one
+    -t|--test               Test the packages
+    -v|--version            Display script version
+    -w|--watch              Watches for file changes and run "pnpm build:dev" for a package. Does not support other options. Requires nodemon
 
     Examples:
     build-kie-package -d @kie-tools/serverless-workflow-language-service    Build a Kie package and his dependencies.
@@ -155,6 +157,10 @@ while [[ $# -gt 0 ]]; do
       exit 0
       shift
       ;;
+    -w|--watch)
+      WATCH=true
+      shift
+      ;;
     -*|--*)
       echo "Unknown option $1"
       exit 1
@@ -169,12 +175,17 @@ done
 
 ########################################################################
 
-if [[ ! -d $kieToolsPath ]]; then
+if [ $WATCH = true ]  &&  ([ $BUILDDEPS = true ] || [ $STARTPKG = true ] || [ $TESTPKG = true ]); then
+    echo "Watch option is not supported with other options."
+    exit 1
+fi
+
+if [ ! -d $kieToolsPath ]; then
     echo "Repository root not found"
     exit 1
 fi
 
-if [[ -z "$pkgName" ]]; then
+if [ -z "$pkgName" ]; then
     pkgName=${PWD##*/}
 else 
     pkgName=$(get_package_name $pkgName )
@@ -188,12 +199,16 @@ cd $origPwd
 
 notify "Build done"
 
-if [[ $TESTPKG = true ]]; then
+if [ $TESTPKG = true ]; then
     run_package_command $pkgName "pnpm test"
 fi
 
-if [[ $STARTPKG = true ]]; then
+if [ $STARTPKG = true ]; then
     run_package_command $pkgName "pnpm start"
+fi
+
+if [ $WATCH = true ] && [ $BUILDDEPS = false ] && [ $STARTPKG = false ] && [ $TESTPKG = false ]; then
+    run_package_command $pkgName 'nodemon -w src -e ts -x "pnpm build:dev || exit 0; notify-send \"Nodemon build: done\""'
 fi
 
 
