@@ -68,6 +68,7 @@ function run_package_command() {
             echo "Error: Filed to run '$commandToRun'"
             exit 1
         fi
+        printf '\n'
     fi
 }
 
@@ -210,5 +211,4 @@ fi
 if [ $WATCH = true ] && [ $BUILDDEPS = false ] && [ $STARTPKG = false ] && [ $TESTPKG = false ]; then
     run_package_command $pkgName 'nodemon -w src -e ts -x "pnpm build:dev; exit 0; notify-send \"Nodemon build: done\""'
 fi
-
 
