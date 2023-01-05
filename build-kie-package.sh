@@ -73,15 +73,14 @@ function run_package_command() {
 }
 
 function repo_bootstrap() {
-    if [[ $BOOTSTRAP = true ]]; then
-        (
-            cd $kieToolsPath
-            pnpm bootstrap
-        )
-        if [ $? -ne 0 ]; then
-            echo "Error: Failed to bootstrap"
-            exit 1
-        fi
+    (
+        cd $kieToolsPath
+        pnpm bootstrap
+    )
+
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to bootstrap"
+        exit 1
     fi
 }
 
@@ -192,7 +191,9 @@ else
     pkgName=$(get_package_name $pkgName )
 fi 
 
-repo_bootstrap
+if [[ $BOOTSTRAP = true ]]; then
+    repo_bootstrap
+fi
 
 build_package $pkgName 
 
