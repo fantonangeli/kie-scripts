@@ -210,6 +210,6 @@ if [ $STARTPKG = true ]; then
 fi
 
 if [ $WATCH = true ] && [ $BUILDDEPS = false ] && [ $STARTPKG = false ] && [ $TESTPKG = false ]; then
-    run_package_command $pkgName 'nodemon -w src -e ts -x "pnpm build:dev; exit 0; notify-send \"Nodemon build: done\""'
+    run_package_command $pkgName 'nodemon -w src -e "ts,tsx,js,css" -x "pnpm build:dev; exit 0; notify-send \"Nodemon build: done\""'
 fi
 
