@@ -5,7 +5,7 @@ ENV="dev"
 QUIET=false
 STARTPKG=false
 TESTPKG=false
-VERSION="0.9"
+VERSION="0.10"
 WATCH=false
 kiePkgPrefix="@kie-tools"
 kieToolsPath=""
@@ -175,8 +175,8 @@ done
 
 ########################################################################
 
-if [ $WATCH = true ]  &&  ([ $BUILDDEPS = true ] || [ $STARTPKG = true ] || [ $TESTPKG = true ]); then
-    echo "Watch option is not supported with other options."
+if [ $WATCH = true ]  &&  ([ $BUILDDEPS = true ] || [ $STARTPKG = true ]); then
+    echo "Watch option can only accept --test option"
     exit 1
 fi
 
@@ -195,13 +195,15 @@ if [[ $BOOTSTRAP = true ]]; then
     repo_bootstrap
 fi
 
-build_package $pkgName 
+if [ $WATCH = false ]; then
+    build_package $pkgName 
+fi
 
 cd $origPwd
 
 notify "Build done"
 
-if [ $TESTPKG = true ]; then
+if [ $TESTPKG = true ] && [ $WATCH = false ]; then
     run_package_command $pkgName "pnpm test"
 fi
 
@@ -209,7 +211,11 @@ if [ $STARTPKG = true ]; then
     run_package_command $pkgName "pnpm start"
 fi
 
-if [ $WATCH = true ] && [ $BUILDDEPS = false ] && [ $STARTPKG = false ] && [ $TESTPKG = false ]; then
-    run_package_command $pkgName 'nodemon -w src -e "ts,tsx,js,css" -x "pnpm build:dev; exit 0; notify-send \"Nodemon build: done\""'
+if [ $WATCH = true ] && [ $BUILDDEPS = false ] && [ $STARTPKG = false ]; then
+    if [ $TESTPKG = false ]; then
+        run_package_command $pkgName 'nodemon -w src -e "ts,tsx,js,css" -x "pnpm build:dev || true; notify-send \"Nodemon build: done\""'
+    else
+        run_package_command $pkgName 'nodemon -w src -e "ts,tsx,js,css" -x "(pnpm build:dev && notify-send \"Nodemon build: done\" && pnpm test) || true"'
+    fi
 fi
 
