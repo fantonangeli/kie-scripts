@@ -1,5 +1,6 @@
 #!/bin/bash
 BOOTSTRAP=false
+PKGBOOTSTRAP=false
 BUILDDEPS=false
 ENV="dev"
 QUIET=false
@@ -72,6 +73,20 @@ function run_package_command() {
     fi
 }
 
+function package_bootstrap() {
+    pkgBuildName=$(get_pkg_build_name $pkgName)
+
+    (
+        cd $kieToolsPath
+        pnpm bootstrap -F $pkgBuildName...
+    )
+
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to bootstrap $pkgBuildName"
+        exit 1
+    fi
+}
+
 function repo_bootstrap() {
     (
         cd $kieToolsPath
@@ -103,7 +118,8 @@ function usage()
     Build a Kie package everywhere in kie-tools.
 
     Options:
-    -b|--bootstrap          Run "pnpm bootstrap" on the repository root before building
+    -B|--bootstrap          Run "pnpm bootstrap" on the repository root before building
+    -b|--pkb-bootstrap          Run "pnpm bootstrap" for the package before building
     -d|--build-deps         Build the dependencies
     -h|--help               Display this message
     -p|--production         Buil in production mode
@@ -123,8 +139,12 @@ function usage()
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    -b|--bootstrap)
+    -B|--bootstrap)
       BOOTSTRAP=true
+      shift
+      ;;
+    -b|--pkg-bootstrap)
+      PKGBOOTSTRAP=true
       shift
       ;;
     -d|--build-deps)
@@ -193,6 +213,10 @@ fi
 
 if [[ $BOOTSTRAP = true ]]; then
     repo_bootstrap
+fi
+
+if [[ $PKGBOOTSTRAP = true ]]; then
+    package_bootstrap
 fi
 
 if [ $WATCH = false ]; then
