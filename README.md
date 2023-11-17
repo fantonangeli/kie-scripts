@@ -26,3 +26,13 @@ build-kie-package -d @kie-tools/serverless-workflow-language-service    Build a 
 build-kie-package -d -s                                                 From a package directory, builds and start the current package  
 build-kie-package vscode-extension-serverless-workflow-editor -d        From any package directory, builds the specified package  
 build-kie-package serverless-workflow-language-service -d               From any package directory, builds the specified package.
+
+
+### **bookmarklets**
+
+A collection of useful bookmarklets for Firefox and Chrome.
+
+- **Copy Branch Name.js**: If run from a Jira issue, generate a branch name for the current issue using the kebab case.
+- **Copy Jira Title.js**: If run from a Jira issue, copies the issue's title.
+- **Copy PR Description.js**: If run from a Jira issue, copies the markdown formatted issue description ready to be pasted in a pull request.
+
