@@ -2,6 +2,7 @@
 BOOTSTRAP=false
 PKGBOOTSTRAP=false
 BUILDDEPS=false
+FASTBUILD=false
 ENV="dev"
 QUIET=false
 STARTPKG=false
@@ -9,6 +10,7 @@ TESTPKG=false
 VERSION="0.10"
 WATCH=false
 kiePkgPrefix="@kie-tools"
+packagesToExcludeInFastBuild=" -F !@kie-tools/serverless-workflow-diagram-editor -F !@kie-tools/dmn-marshaller -F !@kie-tools/dashbuilder -F !@kie-tools/dashbuilder-editor -F !@kie-tools/yard-model -F !@kie-tools/dmn-marshaller"
 kieToolsPath=""
 origPwd=`pwd`
 packagesDir="packages"
@@ -40,11 +42,15 @@ function build_package() {
     pkgBuildName=$(get_pkg_build_name $pkgName)
     echo "Building package: $pkgBuildName"
 
+    if [[ $FASTBUILD = true ]]; then
+        fastFilters=$packagesToExcludeInFastBuild
+    fi
+
     if [[ ! $BUILDDEPS = true ]]; then
         (cd "$kieToolsPath/$packagesDir/$pkgName"; pnpm run build:$ENV)
         exitStatus=$?
     else
-        (cd $kieToolsPath; time pnpm -r -F $pkgBuildName... build:$ENV)
+        (cd $kieToolsPath; time pnpm -r -F $pkgBuildName...$fastFilters build:$ENV)
         exitStatus=$?
     fi
 
@@ -119,8 +125,9 @@ function usage()
 
     Options:
     -B|--bootstrap          Run "pnpm bootstrap" on the repository root before building
-    -b|--pkb-bootstrap          Run "pnpm bootstrap" for the package before building
+    -b|--pkb-bootstrap      Run "pnpm bootstrap" for the package before building
     -d|--build-deps         Build the dependencies
+    -f|--fast-build         Skip heavy dependencies like @kie-tools/serverless-workflow-diagram-editor
     -h|--help               Display this message
     -p|--production         Buil in production mode
     -q|--quiet              Do not show notifications
@@ -149,6 +156,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -d|--build-deps)
       BUILDDEPS=true
+      shift
+      ;;
+    -f|--fast-build)
+      FASTBUILD=true
       shift
       ;;
     -h|--help)
@@ -195,7 +206,7 @@ done
 
 ########################################################################
 
-if [ $WATCH = true ]  &&  ([ $BUILDDEPS = true ] || [ $STARTPKG = true ]); then
+if [ $WATCH = true ]  &&  ([ $BUILDDEPS = true ] || [ $FASTBUILD = true ] || [ $STARTPKG = true ]); then
     echo "Watch option can only accept --test option"
     exit 1
 fi
@@ -235,7 +246,7 @@ if [ $STARTPKG = true ]; then
     run_package_command $pkgName "pnpm start"
 fi
 
-if [ $WATCH = true ] && [ $BUILDDEPS = false ] && [ $STARTPKG = false ]; then
+if [ $WATCH = true ] && [ $BUILDDEPS = false ] && [ $FASTBUILD = false ] && [ $STARTPKG = false ]; then
     if [ $TESTPKG = false ]; then
         run_package_command $pkgName 'nodemon -w src -e "ts,tsx,js,css" -x "pnpm build:dev || true; notify-send \"Nodemon build: done\""'
     else
