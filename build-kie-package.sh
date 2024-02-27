@@ -17,6 +17,10 @@ packagesDir="packages"
 pkgName=""
 kieToolsPath=$(pwd | sed -E "s@(.*\/kie-tools).*@\1@")
 
+function print_log_section(){
+    echo "------------------------------------------------------------------------------------------------------------------------------------------------------"
+}
+
 function get_pkg_path() {
     currentPkgName=$1
     if [[ -d $currentPkgName ]]; then
@@ -40,6 +44,7 @@ function get_pkg_build_name() {
 function build_package() {
     pkgName=$1
     pkgBuildName=$(get_pkg_build_name $pkgName)
+    print_log_section
     echo "Building package: $pkgBuildName"
 
     if [[ $FASTBUILD = true ]]; then
@@ -50,6 +55,7 @@ function build_package() {
         (cd "$kieToolsPath/$packagesDir/$pkgName"; pnpm run build:$ENV)
         exitStatus=$?
     else
+        echo "Executing: pnpm -r -F $pkgBuildName...$fastFilters build:$ENV"
         (cd $kieToolsPath; time pnpm -r -F $pkgBuildName...$fastFilters build:$ENV)
         exitStatus=$?
     fi
