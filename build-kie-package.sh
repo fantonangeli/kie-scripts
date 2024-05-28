@@ -14,6 +14,7 @@ packagesToExcludeInFastBuild=" -F !@kie-tools/serverless-workflow-diagram-editor
 kieToolsPath=""
 origPwd=`pwd`
 packagesDir="packages"
+examplesDir="examples"
 pkgName=""
 kieToolsPath=$(pwd | sed -E "s@(.*\/kie-tools).*@\1@")
 
@@ -25,8 +26,10 @@ function get_pkg_path() {
     currentPkgName=$1
     if [[ -d $currentPkgName ]]; then
         echo $currentPkgName
-    else
+    elif [[ -d  "$kieToolsPath/$packagesDir/$currentPkgName" ]]; then
         echo "$kieToolsPath/$packagesDir/$currentPkgName"
+    else 
+        echo "$kieToolsPath/$examplesDir/$currentPkgName"
     fi
 }
 
