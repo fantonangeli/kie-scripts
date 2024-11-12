@@ -58,8 +58,8 @@ function build_package() {
         (cd "$kieToolsPath/$packagesDir/$pkgName"; pnpm run build:$ENV)
         exitStatus=$?
     else
-        echo "Executing: pnpm -r -F $pkgBuildName...$fastFilters build:$ENV"
-        (cd $kieToolsPath; time pnpm -r -F $pkgBuildName...$fastFilters build:$ENV)
+        echo "Executing: pnpm -F $pkgBuildName...$fastFilters build:$ENV"
+        (cd $kieToolsPath; time pnpm -F $pkgBuildName...$fastFilters build:$ENV)
         exitStatus=$?
     fi
 
