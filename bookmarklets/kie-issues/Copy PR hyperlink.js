@@ -1,1 +1,6 @@
-javascript: var prTitle = document.title.replace(/^(.*) by \w+ %C2%B7 Pull Request #\d+%20%C2%B7%20[\S]+$/g,%20"$1");%20var%20url%20=%20window.location.href;%20var%20result%20=%20`=HYPERLINK("${url}",%20"${prTitle}")`;%20navigator.clipboard.writeText(result);%20alert("Copied%20the%20text:%20"%20+%20result);
+javascript: 
+var prTitle = document.title.replace(/^(.*) by w+ · Pull Request #d+ · [S]+$/g, "$1"); 
+var url = window.location.href; 
+var result = `=HYPERLINK("${url}", "${prTitle}")`; 
+navigator.clipboard.writeText(result); 
+alert("Copied the text: " + result);
