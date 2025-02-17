@@ -9,7 +9,6 @@ STARTPKG=false
 TESTPKG=false
 VERSION="0.10"
 WATCH=false
-kiePkgPrefix="@kie-tools"
 packagesToExcludeInFastBuild=" -F !serverless-workflow-diagram-editor -F !dmn-marshaller -F !dashbuilder -F !dashbuilder-editor -F !yard-model -F !dmn-marshaller -F !dmn-testing-models -F !yard-validator-worker -F !stunner-editors"
 kieToolsPath=""
 origPwd=`pwd`
