@@ -10,12 +10,11 @@ TESTPKG=false
 VERSION="0.10"
 WATCH=false
 packagesToExcludeInFastBuild=" -F !serverless-workflow-diagram-editor -F !dmn-marshaller -F !dashbuilder -F !dashbuilder-editor -F !yard-model -F !dmn-marshaller -F !dmn-testing-models -F !yard-validator-worker -F !stunner-editors"
-kieToolsPath=""
 origPwd=`pwd`
 packagesDir="packages"
 examplesDir="examples"
 pkgName=""
-kieToolsPath=$(pwd | sed -E "s@(.*\/kie-tools).*@\1@")
+kieToolsPath=$(pnpm root -w | sed -E "s@(.*)\/node_modules@\1@")
 
 function print_log_section(){
     echo "------------------------------------------------------------------------------------------------------------------------------------------------------"
