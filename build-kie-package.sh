@@ -1,9 +1,10 @@
 #!/bin/bash
 BOOTSTRAP=false
-PKGBOOTSTRAP=false
 BUILDDEPS=false
-FASTBUILD=false
 ENV="dev"
+FASTBUILD=false
+OPENBROWSER=false
+PKGBOOTSTRAP=false
 QUIET=false
 STARTPKG=false
 TESTPKG=false
@@ -15,6 +16,7 @@ packagesDir="packages"
 examplesDir="examples"
 pkgName=""
 kieToolsPath=$(pnpm root -w | sed -E "s@(.*)\/node_modules@\1@")
+browserCmd="/opt/google/chrome/chrome $additionalArgs"
 
 function print_log_section(){
     echo "------------------------------------------------------------------------------------------------------------------------------------------------------"
@@ -125,6 +127,42 @@ function get_package_name() {
     echo $fullPkgName | sed -E "s/(@kie-tools\\/)?(.*)/\2/"
 }
 
+function wait_for_url_and_open() {
+    local url="$1"
+    local max_wait_time=900  # 15 minutes timeout
+    local elapsed_time=0
+
+    echo "Waiting for $url to be accessible..."
+
+    while true; do
+        response=$(curl -ks "$url")
+
+        if [ -n "$response" ]; then
+            echo "URL is now accessible. Opening browser..."
+            $browserCmd "$url" > /dev/null 2>&1 &
+            break
+        fi
+
+        if [ $elapsed_time -ge $max_wait_time ]; then
+            echo "Timeout reached. The URL is still not accessible after 15 minutes."
+            exit 1
+        fi
+
+        sleep 1
+        elapsed_time=$((elapsed_time + 1))
+    done
+}
+
+function detect_url() {
+    if [ -f "webpack.config.js" ]; then
+        echo $(node -e 'const webpack = require("webpack"); const webpackConfig = require("./webpack.config.js"); webpackConfig("dev").then(c => console.log(`${c.devServer.https?"https":"http"}://localhost:${c.devServer.port}`));' | tail -n1)
+    elif [ -f "webpack.config.ts" ]; then
+        echo $(ts-node -e 'import webpackConfig from "./webpack.config"; webpackConfig({}, {}).then(config => { const c = (config as any[]).filter(e=>e.devServer)[0]; const devServer = c.devServer; console.log(`${devServer.https?"https":"http"}://localhost:${devServer.port}`); });' | tail -n1)
+    else
+        echo ""
+    fi
+}
+
 function usage()
 {
     echo "Usage :  $0 [package] [options]
@@ -136,6 +174,7 @@ function usage()
     -d|--build-deps         Build the dependencies
     -f|--fast-build         Skip heavy dependencies like @kie-tools/serverless-workflow-diagram-editor
     -h|--help               Display this message
+    -o|--open               Open the browser after when the local server is up. This only works when the server port is easy to read.
     -p|--production         Buil in production mode
     -q|--quiet              Do not show notifications
     -s|--start              Start the package, if it's only one
@@ -184,6 +223,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -s|--start)
       STARTPKG=true
+      shift
+      ;;
+    -o|--open)
+      OPENBROWSER=true
       shift
       ;;
     -t|--test)
@@ -247,6 +290,23 @@ notify "Build done"
 
 if [ $TESTPKG = true ] && [ $WATCH = false ]; then
     run_package_command $pkgName "pnpm test"
+fi
+
+if [[ $OPENBROWSER = true ]]; then
+    url=$(detect_url)
+
+    if [ $STARTPKG = false ]; then
+        echo "Warning: Option OPENBROWSER requres START"
+        exit 1;
+    fi
+
+    if [[ -n "$url" ]]; then
+        echo "Detected URL: $url"
+        wait_for_url_and_open "$url" &
+    else
+        echo "Warning: Could not determine the URL to open."
+        exit 1;
+    fi
 fi
 
 if [ $STARTPKG = true ]; then
