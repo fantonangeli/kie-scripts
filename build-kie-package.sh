@@ -3,7 +3,6 @@ BOOTSTRAP=false
 BUILDDEPS=false
 ENV="dev"
 FASTBUILD=false
-OPENBROWSER=false
 PKGBOOTSTRAP=false
 QUIET=false
 STARTPKG=false
@@ -174,7 +173,6 @@ function usage()
     -d|--build-deps         Build the dependencies
     -f|--fast-build         Skip heavy dependencies like @kie-tools/serverless-workflow-diagram-editor
     -h|--help               Display this message
-    -o|--open               Open the browser after when the local server is up. This only works when the server port is easy to read.
     -p|--production         Buil in production mode
     -q|--quiet              Do not show notifications
     -s|--start              Start the package, if it's only one
@@ -223,10 +221,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     -s|--start)
       STARTPKG=true
-      shift
-      ;;
-    -o|--open)
-      OPENBROWSER=true
       shift
       ;;
     -t|--test)
@@ -292,13 +286,8 @@ if [ $TESTPKG = true ] && [ $WATCH = false ]; then
     run_package_command $pkgName "pnpm test"
 fi
 
-if [[ $OPENBROWSER = true ]]; then
+if [ $STARTPKG = true ]; then
     url=$(detect_url)
-
-    if [ $STARTPKG = false ]; then
-        echo "Warning: Option OPENBROWSER requres START"
-        exit 1;
-    fi
 
     if [[ -n "$url" ]]; then
         echo "Detected URL: $url"
@@ -307,9 +296,7 @@ if [[ $OPENBROWSER = true ]]; then
         echo "Warning: Could not determine the URL to open."
         exit 1;
     fi
-fi
 
-if [ $STARTPKG = true ]; then
     run_package_command $pkgName "pnpm start"
 fi
 
