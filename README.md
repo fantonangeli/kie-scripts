@@ -28,6 +28,30 @@ build-kie-package vscode-extension-serverless-workflow-editor -d        From any
 build-kie-package serverless-workflow-language-service -d               From any package directory, builds the specified package.
 
 
+### **drakt-build**
+
+Usage: drakt-build.sh [upstream|midstream] \<branch\>
+Builds and caches KIE artifacts (Drools, Kogito Runtimes, Kogito Apps) into the local Maven repository and stores them for future use.
+
+The script clones the specified branch from either upstream (Apache) or midstream (kiegroup) repositories, runs a quick Maven install skipping tests, and removes the cloned directories. After building, it saves the artifacts to ~/.m2/kie-artifacts/$MODE/$BRANCH for later switching with drakt-switch. It also updates ~/.m2/drakt-env.sh to track the current configuration.
+
+Examples:
+drakt-build.sh midstream main               Build and cache main branch artifacts from midstream repositories
+drakt-build.sh upstream 9.103.x-prod        Build and cache 9.103.x-prod branch artifacts from upstream repositories
+
+
+### **drakt-switch**
+
+Usage: drakt-switch [upstream|midstream] \<branch\>
+Switches between pre-built KIE artifacts stored in ~/.m2/kie-artifacts.
+
+The script replaces the current Maven local repository artifacts (org/kie and org/apache/kie) with cached versions from the specified mode and branch. It also updates ~/.m2/drakt-env.sh to track the current configuration.
+
+Examples:
+drakt-switch midstream main              Switch to cached midstream artifacts for main branch
+drakt-switch upstream 9.103.x-prod       Switch to cached upstream artifacts for 9.103.x-prod branch
+
+
 ### **bookmarklets**
 
 A collection of useful bookmarklets for Firefox and Chrome.
