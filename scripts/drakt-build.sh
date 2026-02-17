@@ -6,7 +6,7 @@ BRANCH="${2-}"
 M2_DIR="$HOME/.m2"
 ENV_FILE="$M2_DIR/drakt-env.sh"
 BUILD_CMD="mvn clean install -Dquickly -DskipTests -DskipITs"
-WORK_DIR="drakt-build-tmp"
+WORK_DIR="/tmp/drakt-build-tmp"
 ARTIFACTS_DIR="$M2_DIR/kie-artifacts/$MODE/$BRANCH"
 
 usage() {
@@ -94,3 +94,5 @@ DRAKT_CURRENT_BRANCH='$BRANCH'
 EOF
 
 rm -rf "$WORK_DIR" || true
+
+echo "New DRAKT version: $MODE/$BRANCH----------------------------------------------------------------------------------------------------"
