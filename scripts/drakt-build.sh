@@ -1,22 +1,29 @@
 #!/bin/sh
 set -eu
 
-MODE="${1-}"
-BRANCH="${2-}"
 M2_DIR="$HOME/.m2"
 ENV_FILE="$M2_DIR/drakt-env.sh"
 BUILD_CMD="mvn clean install -Dquickly -DskipTests -DskipITs"
 WORK_DIR="/tmp/drakt-build-tmp"
+REMOVE_MODULES="./productized/remove_modules.sh ./productized/modules"
+REMOVE_PRODUCTIZED=false
+MODE=""
+BRANCH=""
 ARTIFACTS_DIR="$M2_DIR/kie-artifacts/$MODE/$BRANCH"
 
 usage() {
   cat <<'USAGE'
 Usage:
-  sh drakt-build.sh [upstream|midstream] <branch>
+  sh drakt-build.sh [OPTIONS] [upstream|midstream] <branch>
+
+Options:
+  --remove-productized-modules    Remove productized modules before building
+  -h, --help                      Show this help message
 
 Examples:
   sh drakt-build.sh midstream main
-  sh drakt-build.sh upstream  9.103.x-prod
+  sh drakt-build.sh upstream 9.103.x-prod
+  sh drakt-build.sh --remove-productized-modules midstream main
 USAGE
 }
 
@@ -27,15 +34,38 @@ die() {
   exit 2
 }
 
-case "$MODE" in
-  -h|--help|help)
-    usage
-    exit 0
-    ;;
-esac
+# Parse arguments
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h|--help|help)
+      usage
+      exit 0
+      ;;
+    --remove-productized-modules)
+      REMOVE_PRODUCTIZED=true
+      shift
+      ;;
+    -*)
+      die "Unknown option: $1"
+      ;;
+    *)
+      if [ -z "$MODE" ]; then
+        MODE="$1"
+      elif [ -z "$BRANCH" ]; then
+        BRANCH="$1"
+      else
+        die "Too many arguments"
+      fi
+      shift
+      ;;
+  esac
+done
 
 if [ -z "$MODE" ]; then die "Missing required argument: [upstream|midstream]"; fi
 if [ -z "$BRANCH" ]; then die "Missing required argument: <branch>"; fi
+
+# Update ARTIFACTS_DIR with actual MODE and BRANCH values
+ARTIFACTS_DIR="$M2_DIR/kie-artifacts/$MODE/$BRANCH"
 
 case "$MODE" in
   midstream)
@@ -69,6 +99,12 @@ build_repo() {
   git clone --depth 1 --branch "$BRANCH" "$url" "$WORK_DIR/$name"
   (
     cd "$WORK_DIR/$name"
+
+    if [ "$REMOVE_PRODUCTIZED" = true ]; then
+      echo "Removing productized modules..."
+      eval "$REMOVE_MODULES"
+    fi
+
     eval "$BUILD_CMD"
   )
   rm -rf "$WORK_DIR/$name"
