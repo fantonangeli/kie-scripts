@@ -4,9 +4,11 @@ set -eu
 M2_DIR="$HOME/.m2"
 ENV_FILE="$M2_DIR/drakt-env.sh"
 BUILD_CMD="mvn clean install -Dquickly -DskipTests -DskipITs"
+BUILD_CMD_PRODUCTIZED="mvn clean install -Dquickly -DskipTests -DskipITs -Dproductized"
 WORK_DIR="/tmp/drakt-build-tmp"
 REMOVE_MODULES="./productized/remove_modules.sh ./productized/modules"
 REMOVE_PRODUCTIZED=false
+PRODUCTIZED=false
 MODE=""
 BRANCH=""
 ARTIFACTS_DIR="$M2_DIR/kie-artifacts/$MODE/$BRANCH"
@@ -18,12 +20,15 @@ Usage:
 
 Options:
   --remove-productized-modules    Remove productized modules before building
+  --productized                   Use productized build command (-Dproductized)
   -h, --help                      Show this help message
 
 Examples:
   sh drakt-build.sh midstream main
   sh drakt-build.sh upstream 9.103.x-prod
   sh drakt-build.sh --remove-productized-modules midstream main
+  sh drakt-build.sh --productized midstream main
+  sh drakt-build.sh --productized --remove-productized-modules midstream main
 USAGE
 }
 
@@ -43,6 +48,10 @@ while [ $# -gt 0 ]; do
       ;;
     --remove-productized-modules)
       REMOVE_PRODUCTIZED=true
+      shift
+      ;;
+    --productized)
+      PRODUCTIZED=true
       shift
       ;;
     -*)
@@ -105,7 +114,11 @@ build_repo() {
       eval "$REMOVE_MODULES"
     fi
 
-    eval "$BUILD_CMD"
+    if [ "$PRODUCTIZED" = true ]; then
+      eval "$BUILD_CMD_PRODUCTIZED"
+    else
+      eval "$BUILD_CMD"
+    fi
   )
   rm -rf "$WORK_DIR/$name"
 }
